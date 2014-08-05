@@ -21,7 +21,7 @@ export AWS_SECRET_KEY="YOUR AWS SECRET KEY"
 
 s3download range --bucket=s3-bucket-name --prefix=folder_or_file_prefix --from='yesterday at noon' --to='today at noon' --save-to=~/Downloads
 
-s3download uses [https://github.com/mojombo/chronic](Chronic) library to set the --from and --to
+s3download uses [Chronic](https://github.com/mojombo/chronic) library to set the --from and --to
 
 
 Or download by timezone

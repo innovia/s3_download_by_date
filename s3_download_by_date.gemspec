@@ -3,7 +3,7 @@ Gem::Specification.new do |s|
   s.version     = '0.1.0'
   s.authors     = ["Ami Mahloof"]
   s.email       = "ami.mahloof@gmail.com"
-  s.homepage    = "https://github.com/innovia"
+  s.homepage    = "https://github.com/innovia/s3_download_by_date"
   s.summary     = "Download from S3 by date range"
   s.description = "Download files by modified date range"
   s.required_rubygems_version = ">= 1.3.6"

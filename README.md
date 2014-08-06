@@ -55,3 +55,6 @@ Getting a list of timezones strings:
 3. Commit your changes (`git commit -am 'Add some feature'`)
 4. Push to the branch (`git push origin my-new-feature`)
 5. Create new Pull Request
+
+## LICENSE
+s3_download_by_date is released under [MIT License](http://www.opensource.org/licenses/MIT)

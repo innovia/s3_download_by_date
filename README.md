@@ -32,7 +32,7 @@ Or download by timezone
 s3download range --timezone='Eastern Time (US & Canada)'  ' --bucket=s3-bucket-name --prefix=folder_or_file_prefix --from='yesterday at noon' --to='today at noon' --save-to=~/Downloads 
 ````
 
-Getting a list of timezones strings:
+**Getting a list of timezones strings:**
 
  ````bash
  s3download list_timezones 

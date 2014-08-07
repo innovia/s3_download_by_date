@@ -19,15 +19,18 @@ export AWS_SECRET_KEY="YOUR AWS SECRET KEY"
 
 ## Usage
 
+````bash
 s3download range --bucket=s3-bucket-name --prefix=folder_or_file_prefix --from='yesterday at noon' --to='today at noon' --save-to=~/Downloads
+````
 
 s3download uses [Chronic](https://github.com/mojombo/chronic) library to set the --from and --to
 
 
 Or download by timezone
 
+````bash
 s3download range --timezone='Eastern Time (US & Canada)'  ' --bucket=s3-bucket-name --prefix=folder_or_file_prefix --from='yesterday at noon' --to='today at noon' --save-to=~/Downloads 
-
+````
 
 Getting a list of timezones strings:
 
@@ -35,7 +38,7 @@ Getting a list of timezones strings:
  s3download list_timezones 
  ````
 
- ````json
+ ````javascript
   {
   "International Date Line West": "Pacific/Midway",
   "Midway Island": "Pacific/Midway",

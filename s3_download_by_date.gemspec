@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = "s3_download_by_date"
-  s.version     = '0.1.3'
+  s.version     = '0.1.4'
   s.authors     = ["Ami Mahloof"]
   s.email       = "ami.mahloof@gmail.com"
   s.homepage    = "https://github.com/innovia/s3_download_by_date"
@@ -11,6 +11,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'chronic', '~> 0.10', '>= 0.10.2'
   s.add_runtime_dependency 'progressbar', '~> 0.21', '>= 0.21.0'
   s.add_runtime_dependency 'aws-sdk', '~> 1.40', '>= 1.40.0'
+  s.add_runtime_dependency 'active-support', '~> 4.1', '>= 4.1.4'
   s.executables = ["s3download"]
   # s.extra_rdoc_files = ['README.md', 'LICENSE']
   s.license = 'MIT'

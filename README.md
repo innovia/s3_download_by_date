@@ -1,4 +1,4 @@
-# S3 Download by date range
+# S3 Download by date range [![Gem Version](https://badge.fury.io/rb/s3_download_by_date.svg)](http://badge.fury.io/rb/s3_download_by_date)
 
 S3 Download files by modifed date (Range)
 

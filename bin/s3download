@@ -29,7 +29,7 @@ class S3Downloader < Thor
 Download S3 files by range (date)
 
 Usage:
-  s3download range --bucket=S3 Bucket Name --prefix=folder inside the specified bucket --save-to=Location of downloaded files
+  s3download range  --timezone='Eastern Time (US & Canada)' --bucket=S3 Bucket Name --prefix=folder inside the specified bucket --save-to=Location of downloaded files
 
 Options:
   --bucket=S3 Bucket Name                                                               # S3 Bucket Name
@@ -38,10 +38,10 @@ Options:
                                                                                         # Default: 2014-08-04 00:00:00 +0300
   [--to=To in a natural language date/time like yesterday, last week, etc...]
                                                                                         # Default: 2014-08-04 23:59:59 +0300
+  --timezone filter files by date [defaults to UTC] ex: "Eastern Time (US & Canada)
   --save-to=Location of downloaded files                                                # The target directory where download files be stored
-  --debug, [--no-debug]                                                               
 
-Utility:
+Utility (Get a list of timezones strings):
   s3download list_timezones 
   {
   "International Date Line West": "Pacific/Midway",
@@ -80,16 +80,24 @@ Utility:
     say("Range: #{range}", color=:green) if options[:debug]
 
     ProgressBar.new("Filter Files", bucket.count) do |pbar|
+      FileUtils.mkdir_p "#{target}"
+      File.open("#{target}/download_info.txt", "w") {|f| f.write("#{Time.now} - Downloaded bucket #{options[:bucket]}/#{options[:prefix]} from: #{from} - to #{to}")}
+      
       bucket.each do |object|
+        # puts "timezone: #{timezone}" if options[:debug]
+        # puts "object last modified: #{object.last_modified}" if options[:debug]
+        # puts "object last modified in timezone: #{object.last_modified.in_time_zone(timezone)}" if options[:debug]
+        # puts "object falls in range: #{range}? => #{range.cover?(object.last_modified.in_time_zone(timezone))}"
         if range.cover?(object.last_modified.in_time_zone(timezone))
           say("Downloading #{object.key} #{object.last_modified.in_time_zone(timezone)}\n", color=:white) if options[:debug]
-          FileUtils.mkdir_p "#{target}/#{range}/#{object.key.match(/(.+)\//)[1]}"
+          FileUtils.mkdir_p "#{target}/#{object.key.match(/(.+)\//)[1]}"
 
           begin
-            File.open("#{target}/#{range.gsub('/', ':')}/#{object.key}", "w") do |f|
+            File.open("#{target}/#{object.key}", "w") do |f|
               f.write(object.read)
             end
           rescue Exception => e
+             puts "Unable to save file: #{e}"
           end
         end
         pbar.inc

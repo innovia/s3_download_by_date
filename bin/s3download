@@ -1,115 +1,20 @@
 #!/usr/bin/env ruby
-# encoding: UTF-8
-require 'aws-sdk'
+$:.unshift File.expand_path(File.join(File.dirname(__FILE__), %w[.. lib]))
 require 'thor'
-require 'chronic'
-require 'progressbar'
-require 'active_support/time'
-require 'fileutils'
-require 'json'
+require 'S3download'
 
-class S3Downloader < Thor
-  default_task :show_help
-  AWS.config({
-    :access_key_id => ENV['AWS_ACCESS_KEY'],
-    :secret_access_key => ENV['AWS_SECRET_KEY'],
-    :region => ENV['REGION'] || 'us-east-1'
-  })
-
-  @@s3 = AWS::S3.new
-
-  desc 'list_timezones', 'list timezones'
-  def list_timezones
-     puts JSON.pretty_generate(ActiveSupport::TimeZone::MAPPING)
-  end
-
-  desc 'show_help', 'show full help'
-  def show_help
-    puts <<-HELP
-Download S3 files by range (date)
-
-Setup:
-  export REGION='eu-west-1' (default to us-east-1)
-  export AWS_ACCESS_KEY="YOUR AWS KEY ID"
-  export AWS_SECRET_KEY="YOUR AWS SECRET KEY"
-
-Usage:
-  s3download range  --timezone='Eastern Time (US & Canada)' --bucket=S3 Bucket Name --prefix=folder inside the specified bucket --save-to=Location of downloaded files
-
-Options:
-  --bucket=S3 Bucket Name                                                               # S3 Bucket Name
-  --prefix=folder inside the specified bucket                                           # Folder inside the specified bucket
-  [--from=From in a natural language date/time like yesterday, last week, etc...]
-                                                                                        # Default: 2014-08-04 00:00:00 +0300
-  [--to=To in a natural language date/time like yesterday, last week, etc...]
-                                                                                        # Default: 2014-08-04 23:59:59 +0300
-  --timezone filter files by date [defaults to UTC] ex: "Eastern Time (US & Canada)
-  --save-to=Location of downloaded files                                                # The target directory where download files be stored
-
-Utility (Get a list of timezones strings):
-  s3download list_timezones 
-  {
-  "International Date Line West": "Pacific/Midway",
-  "Midway Island": "Pacific/Midway",
-  "American Samoa": "Pacific/Pago_Pago",
-  "Hawaii": "Pacific/Honolulu",
-  "Alaska": "America/Juneau",
-  "Pacific Time (US & Canada)": "America/Los_Angeles"
-  .
-  .
-  .
-  }
-    HELP
-  end
-
-  desc 'download', 'Download S3 files by range (date)'
-  method_option :bucket, :required => true,  :alias => 'b', :desc => 'S3 Bucket Name', :banner => 'S3 Bucket Name'
-  method_option :prefix, :required => true,  :alias => 'f', :desc => 'Folder inside the specified bucket', :banner => 'folder inside the specified bucket'
-  method_option :from, :default =>  Chronic.parse('today at 00:00:00'), :banner => 'From in a natural language date/time like yesterday, \'last week\', etc...' 
-  method_option :to, :default =>  Chronic.parse('today at 23:59:59'), :banner => 'To in a natural language date/time like yesterday, \'last week\', etc...' 
-  method_option :save_to, :required => true, :desc => 'the target directory where download files be stored', :banner => 'Location of downloaded files'
-  method_option :debug, :default => false, :type => :boolean,  :desc => 'the target directory where download files be stored'
-  method_option :timezone, :default => 'UTC', :banner => 'timezone to filter files by date [UTC] ex: "Eastern Time (US & Canada)"'
-  def range
-    timezone = options[:timezone]
-    puts "TimeZone: #{timezone}"
-    bucket = @@s3.buckets[options[:bucket]].objects.with_prefix(options[:prefix])
-    from = Chronic.parse("#{options[:from]}").in_time_zone(timezone)
-    to = Chronic.parse("#{options[:to]}").in_time_zone(timezone)
-    puts "From: #{from}"
-    puts "To: #{to}"
-    range = from..to
-    target = File.expand_path(options[:save_to])
-
-    say("download target: #{options[:save_to]}/#{options[:prefix]}", color=:cyan) if options[:debug]
-    say("Range: #{range}", color=:green) if options[:debug]
-
-    ProgressBar.new("Filter Files", bucket.count) do |pbar|
-      FileUtils.mkdir_p "#{target}"
-      File.open("#{target}/download_info.txt", "w") {|f| f.write("#{Time.now} - Downloaded bucket #{options[:bucket]}/#{options[:prefix]} from: #{from} - to #{to}")}
-      
-      bucket.each do |object|
-        # puts "timezone: #{timezone}" if options[:debug]
-        # puts "object last modified: #{object.last_modified}" if options[:debug]
-        # puts "object last modified in timezone: #{object.last_modified.in_time_zone(timezone)}" if options[:debug]
-        # puts "object falls in range: #{range}? => #{range.cover?(object.last_modified.in_time_zone(timezone))}"
-        if range.cover?(object.last_modified.in_time_zone(timezone))
-          say("Downloading #{object.key} #{object.last_modified.in_time_zone(timezone)}\n", color=:white) if options[:debug]
-          FileUtils.mkdir_p "#{target}/#{object.key.match(/(.+)\//)[1]}"
-
-          begin
-            File.open("#{target}/#{object.key}", "w") do |f|
-              f.write(object.read)
-            end
-          rescue Exception => e
-             puts "Unable to save file: #{e}"
-          end
-        end
-        pbar.inc
-      end
-    end
-  end
-
+def help
+	S3download::Cli.start(%w{help fetch}) 
 end
 
-S3Downloader.start
+begin
+  ENV["THOR_DEBUG"] = "1" 
+  S3download::Cli.start
+rescue Thor::RequiredArgumentMissingError => e
+  puts "\e[31mMissing Arguments: #{e}\e[0m\n\n"
+  help
+rescue Thor::InvocationError => e
+	puts "\e[31m#{e.to_s.gsub(/Usage:.+"/, '').chomp} but there's no such option\e[0m\n\n"
+	help
+end
+

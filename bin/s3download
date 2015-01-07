@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 $:.unshift File.expand_path(File.join(File.dirname(__FILE__), %w[.. lib]))
 require 'thor'
-require 'S3download'
+require 's3download'
 
 def help
 	S3download::Cli.start(%w{help fetch}) 

@@ -10,7 +10,7 @@ require 'json'
 
 class S3download::Cli < Thor
   default_task :fetch
-  attr_accessor :s3, :debug, :files_found, :range, :target, :bucket, :from, :to
+  attr_accessor :s3, :debug, :files_found, :range, :target, :bucket, :from, :to, :prefix
   
   desc 'fetch', 'Download S3 files by range (date)'
   class_option  :bucket, :alias => 'b',                                                                      :banner => 'S3 Bucket Name'
@@ -23,12 +23,21 @@ class S3download::Cli < Thor
   class_option  :verbose,                                   :default => false, :type => :boolean            
   def fetch
     raise Thor::RequiredArgumentMissingError, 'You must supply an S3 bucket name' if options[:bucket].nil?
-    raise Thor::RequiredArgumentMissingError, 'You must supply a prefix (folder within the s3 bucket to filter by' if options[:prefix].nil?
     raise Thor::RequiredArgumentMissingError, 'You must supply a location where to save the downloaded files to' if options[:save_to].nil?
+    
+    if options[:prefix].nil?
+      say "You did not pass a --prefix option, this will scan the entire bucket and can be very slow if there too many files in that bucket\n", color = :yellow
+      say "If you're trying to script this and bypass this question, use --prefix '' (empty string)\n", color = :yellow
+      response = ask "Continue without a prefix? (y/n)", color = :white
+      exit 0 if response == 'n'
+      self.prefix  = ''
+    else
+      self.prefix = options[:prefix]
+    end
+
     init  
 
-    ProgressBar.new("Filter Files", bucket.count) do |pbar|
-      
+    ProgressBar.new("Looking for files: ", bucket.count) do |pbar|      
       bucket.each do |object|
         if options[:verbose]
           say "timezone: #{options[:timezone]}" 
@@ -71,7 +80,7 @@ class S3download::Cli < Thor
   def init
     aws_init
     self.debug = true if options[:verbose]
-    self.bucket = self.s3.buckets[options[:bucket]].objects.with_prefix(options[:prefix])
+    self.bucket = self.s3.buckets[options[:bucket]].objects.with_prefix(self.prefix)
     self.from = Chronic.parse("#{options[:from]}").in_time_zone(options[:timezone])   
     self.to = Chronic.parse("#{options[:to]}").in_time_zone(options[:timezone])
     self.range = self.from..self.to
@@ -81,26 +90,33 @@ class S3download::Cli < Thor
     FileUtils.mkdir_p "#{self.target}"
 
     File.open("#{self.target}/download_info.txt", "w") {|f| 
-      f.write("#{Time.now} - Downloaded bucket #{options[:bucket]}/#{options[:prefix]} from: #{from} - to #{to}")
+      f.write("#{Time.now} - Downloaded bucket #{options[:bucket]}/#{self.prefix} from: #{from} - to #{to}")
     }
 
     say "S3 Search & Download", color = :white
     say "--------------------\n", color = :white
-    say "Bucket: #{self.bucket}", color = :cyan
+    say "Bucket: #{options[:bucket]}", color = :cyan
+    say "Prefix: #{self.prefix}", color = :cyan
     say "TimeZone: #{options[:timezone]}", color = :cyan
     say "From: #{from}", color = :cyan
     say "To: #{to}", color = :cyan
-    say("Download target: #{options[:save_to]}/#{options[:prefix]}", color = :cyan) if options[:debug]
+    say("Download target: #{options[:save_to]}/#{self.prefix}", color = :cyan) if options[:debug]
     say("Range: #{self.range}", color = :green) if options[:debug]
   end
 
   def aws_init
-    AWS.config({
+    config = {
       :access_key_id => ENV['AWS_ACCESS_KEY'],
       :secret_access_key => ENV['AWS_SECRET_KEY'],
       :region => ENV['REGION'] || 'us-east-1'
-    })
+    }
 
-    self.s3 = AWS::S3.new
+    if config[:access_key_id].nil? || config[:secret_access_key].nil?
+      say "You must set your AWS Secret Key and AWS Access Key Id in your environment variables", color = :red
+      say "export REGION='eu-west-1' (default to us-east-1)\nexport AWS_ACCESS_KEY=\"YOUR AWS KEY ID\"\nexport AWS_SECRET_KEY=\"YOUR AWS SECRET KEY\"", color = :green
+      exit 1
+    end
+
+    self.s3 = AWS::S3.new(config)
   end
 end

@@ -96,7 +96,7 @@ class S3download::Cli < Thor
     say "S3 Search & Download", color = :white
     say "--------------------\n", color = :white
     say "Bucket: #{options[:bucket]}", color = :cyan
-    say "Prefix: #{self.prefix}", color = :cyan
+    say "Prefix: #{self.prefix}\n", color = :cyan
     say "TimeZone: #{options[:timezone]}", color = :cyan
     say "From: #{from}", color = :cyan
     say "To: #{to}", color = :cyan

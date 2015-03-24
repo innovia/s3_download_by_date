@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 # encoding: UTF-8
-require 'aws-sdk'
+require 'aws-sdk-v1'
 require 'thor'
 require 'chronic'
 require 'progressbar'
